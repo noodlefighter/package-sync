@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+
+# refer:
+# - https://docs.python.org/3/howto/curses.html
+# - https://docs.python.org/3/library/curses.html
+import curses
+
+class TextList:
+    def __init__(self, scr, y, x, h, w):
+        self.cur_idx = 0
+        self.cur_roll = 0
+        self.show_cursor = False
+        self.scr = scr
+        self.items = []
+        self.y = int(y)
+        self.x = int(x)
+        self.w = int(w)
+        self.h = int(h)
+
+        self.pad = curses.newpad(10240, self.w)
+        self.scr.refresh()
+        # self._draw()
+
+    def _color_s(self, pair):
+        if curses.has_colors():
+            self.pad.attrset(pair)
+
+    def _draw(self):
+        for j in range(len(self.items)):
+            if j == self.cur_idx and self.show_cursor:
+                attr = curses.color_pair(1)
+            else:
+                attr = curses.color_pair(0)
+            self.pad.addstr(j, 0, self.items[j].ljust(self.w), attr)
+
+        self.scr.refresh()
+        self.pad.refresh(self.cur_roll, 0, self.y, self.x, self.y+self.h-1, self.x+self.w-1)
+
+    def _set_index(self, index):
+        if index < 0:
+            index = 0
+        elif index >= len(self.items):
+            index = len(self.items) - 1
+
+        if index < self.cur_roll:
+            self.cur_roll = index
+        elif index >= self.cur_roll + (self.h - 1):
+            self.cur_roll = index - (self.h - 1)
+        self.cur_idx = index
+
+    def set_index(self, index):
+        self._set_index(index)
+        self._draw()
+
+    def set_index_step(self, step):
+        self.set_index(self.cur_idx + step)
+        self._draw()
+    def set_index_step_page(self, step_page):
+        self.set_index(self.cur_idx + self.h*step_page)
+        self._draw()
+
+    def set_items(self, items):
+        self.items = items
+        self.set_index_step(0) # for refresh
+
+    def focus(self, is_focus):
+        self.show_cursor = is_focus
+        self._draw()
+
+    def display(self):
+        self._draw()
+
+    def erase(self):
+        self.item = []
+        self.set_index_step(0) #  refresh
+
+
+def erase_menu(scr, menu_y):
+    "Clear the space where the menu resides"
+    scr.move(menu_y, 0)
+    scr.clrtoeol()
+    scr.move(menu_y + 1, 0)
+    scr.clrtoeol()
+
+def display_menu(scr, menu_y):
+    "Display the menu of possible keystroke commands"
+    erase_menu(scr, menu_y)
+    scr.addstr(menu_y, 4,
+        'Use the cursor keys to move, and space or Enter to toggle a cell.')
+    scr.addstr(menu_y + 1, 4,
+        'E)rase the board, R)andom fill, S)tep once or C)ontinuously, Q)uit')
+
+def keyloop(scr):
+    curses.curs_set(0)
+
+    scr.clear()
+    scr_y, scr_x = scr.getmaxyx()
+    menu_y = (scr_y - 3) - 1
+    # display_menu(scr, menu_y)
+
+    # Set up the mask to listen for mouse events
+    curses.mousemask(curses.BUTTON1_CLICKED)
+
+    if curses.has_colors():
+        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)
+        curses.init_pair(2, curses.COLOR_RED, 0)
+        curses.init_pair(3, curses.COLOR_YELLOW, 0)
+        curses.init_pair(4, curses.COLOR_WHITE, 0)
+
+    list_h = int((scr_y-4)/2)
+    cur_y = 0
+
+    scr.addstr(cur_y, 0, "tracked:")
+    cur_y += 1
+
+    board = TextList(scr, cur_y, 0, list_h, scr_x)
+    cur_y += list_h
+
+    scr.addstr(cur_y, 0, "untracked:")
+    cur_y += 1
+
+    board_untrack = TextList(scr, cur_y, 0, list_h, scr_x)
+    cur_y += list_h
+
+    scr.addstr(scr_y-1, 0, "This is help...")
+
+    items = []
+    for i in range(1024):
+        items.append('%s%s%s%s%s%s' % (i, i, i, i, i, i))
+
+    board.focus(1)
+    board.set_items(items)
+    board_untrack.set_items(items)
+
+    # Main loop:
+    while True:
+        c = scr.getch()                # Get a keystroke
+        if 0 < c < 256:
+            c = chr(c)
+            if c in ' \n':
+                pass
+            elif c in 'Qq':
+                break
+            elif c in 'Jj':
+                board.set_index_step(1)
+            elif c in 'Kk':
+                board.set_index_step(-1)
+            elif c in 'Uu':
+                board.set_index_step_page(-1)
+            elif c in 'Dd':
+                board.set_index_step_page(1)
+            else:
+                # Ignore incorrect keys
+                pass
+        elif c == curses.KEY_UP:
+            board.set_index_step(-1)
+        elif c == curses.KEY_DOWN:
+            board.set_index_step(1)
+        elif c == curses.KEY_PPAGE:
+            board.set_index_step_page(-1)
+        elif c == curses.KEY_NPAGE:
+            board.set_index_step_page(1)
+        else:
+            # Ignore incorrect keys
+            pass
+
+
+def main(scr):
+    keyloop(scr)                 # Enter the main loop
+
+if __name__ == '__main__':
+    curses.wrapper(main)
+
