@@ -5,6 +5,8 @@ import json
 import click
 from functools import reduce
 
+default_pkglist_cmd = 'pacman -Qeqn'
+
 def save_data():
     global g_file
     global g_data
@@ -18,17 +20,23 @@ def cli(file):
     global g_data
     global g_pending
 
-    with open(file, 'r+') as f:
-        g_data = json.loads(f.read())
-    if g_data['sync'] is None:
+    if os.path.exists(file):
+        with open(file, 'r+') as f:
+            g_data = json.loads(f.read())
+    else:
+        g_data = dict()
+
+    if 'sync' not in dict(g_data):
         g_data['sync'] = list()
-    if g_data['ignore'] is None:
+    if 'ignore' not in dict(g_data):
         g_data['ignore'] = list()
+    if 'pkglist_cmd' not in dict(g_data):
+        g_data['pkglist_cmd'] = default_pkglist_cmd
 
     g_file = file
 
     # get pending list
-    os.system("pacman -Qeqn > pkglist.tmp.txt")
+    os.system(g_data['pkglist_cmd'] + " > pkglist.tmp.txt")
     with open("pkglist.tmp.txt") as f:
         l = f.readlines()
         l = map(lambda x: x.strip(), l)
@@ -52,9 +60,8 @@ def list_ignore():
     click.echo('\n'.join(g_data['ignore']))
 
 @click.command()
-@click.option('-a', '--all', default=[False], type=bool, nargs=0)
 @click.argument('args', nargs=-1)
-def add(all, args):
+def add(args):
     global g_data
 
     add_list = list(filter(lambda x: x not in g_data['sync'], args))
@@ -98,6 +105,14 @@ def delete():
     g_data['sync'] = list(filter(lambda x: x not in args, g_data['sync']))
     save_data()
 
+
+@click.command(name='set-pkglist-cmd')
+@click.argument('args', nargs=-1)
+def set_pkglist_cmd(args):
+    global g_data
+    g_data['pkglist_cmd'] = ' '.join(args)
+    save_data()
+
 cli.add_command(list_pending)
 cli.add_command(list_sync)
 cli.add_command(list_ignore)
@@ -105,6 +120,7 @@ cli.add_command(add)
 cli.add_command(ignore)
 cli.add_command(delete)
 cli.add_command(ignore_all)
+cli.add_command(set_pkglist_cmd)
 
 if __name__ == '__main__':
     cli()
