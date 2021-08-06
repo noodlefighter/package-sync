@@ -50,8 +50,7 @@ ignore: acpi acpid ...
 4. 需要同步时，可以这样操作
 
 ```bash
-$ ./pkgsync mypacks.json list-sync > pkglist.txt
-$ sudo pacman -S - < pkglist.txt
+$ ./pkgsync mypacks.json list-sync | sudo pacman -S -
 ```
 
 5. 添加新软件包后
