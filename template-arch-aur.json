@@ -1,0 +1,5 @@
+{
+    "ignore": [],
+    "pkglist_cmd": "pacman -Qeqm",
+    "sync": []
+}

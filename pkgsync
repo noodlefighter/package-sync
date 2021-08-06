@@ -3,7 +3,6 @@
 import os
 import json
 import click
-from functools import reduce
 
 default_pkglist_cmd = 'pacman -Qeqn'
 
@@ -74,7 +73,8 @@ def add(args):
     save_data()
 
 @click.command()
-def ignore():
+@click.argument('args', nargs=-1)
+def ignore(args):
     global g_data
     ignore_list = list(filter(lambda x: x not in g_data['ignore'], args))
     g_data['ignore'].extend(ignore_list)
@@ -99,7 +99,8 @@ def ignore_all():
     save_data()
 
 @click.command(name='del')
-def delete():
+@click.argument('args', nargs=-1)
+def delete(args):
     global g_data
     g_data['ignore'] = list(filter(lambda x: x not in args, g_data['ignore']))
     g_data['sync'] = list(filter(lambda x: x not in args, g_data['sync']))
