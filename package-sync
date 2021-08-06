@@ -52,8 +52,11 @@ def list_ignore():
     click.echo('\n'.join(g_data['ignore']))
 
 @click.command()
-def add():
+@click.option('-a', '--all', default=[False], type=bool, nargs=0)
+@click.argument('args', nargs=-1)
+def add(all, args):
     global g_data
+
     add_list = list(filter(lambda x: x not in g_data['sync'], args))
     g_data['sync'].extend(add_list)
     if len(add_list) == 0:
@@ -67,7 +70,20 @@ def add():
 def ignore():
     global g_data
     ignore_list = list(filter(lambda x: x not in g_data['ignore'], args))
-    g_data['sync'].extend(ignore_list)
+    g_data['ignore'].extend(ignore_list)
+    if len(ignore_list) == 0:
+        print('ignore nothing')
+    else:
+        print(f"ignore: {' '.join(ignore_list)}")
+
+    save_data()
+
+@click.command(name='ignore-all')
+def ignore_all():
+    global g_data
+    global g_pending
+    ignore_list = list(filter(lambda x: x not in g_data['ignore'], g_pending))
+    g_data['ignore'].extend(ignore_list)
     if len(ignore_list) == 0:
         print('ignore nothing')
     else:
@@ -88,6 +104,7 @@ cli.add_command(list_ignore)
 cli.add_command(add)
 cli.add_command(ignore)
 cli.add_command(delete)
+cli.add_command(ignore_all)
 
 if __name__ == '__main__':
     cli()
