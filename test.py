@@ -72,5 +72,14 @@ class TestStringMethods(unittest.TestCase):
         self.assertTrue('123' in ls)
         self.assertTrue('456' in ls)
 
+        exec_cmd(test_cmd + 'del 123 456')
+        exec_cmd(test_cmd + 'add-all')
+        ls = str_to_list(exec_cmd(test_cmd + 'list-ignore'))
+        self.assertTrue('123' not in ls)
+        self.assertTrue('456' not in ls)
+        ls = str_to_list(exec_cmd(test_cmd + 'list-sync'))
+        self.assertTrue('123' in ls)
+        self.assertTrue('456' in ls)
+
 if __name__ == '__main__':
     unittest.main()

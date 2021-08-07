@@ -49,7 +49,7 @@ def cli(file):
     # get pending list
     os.system(g_data['pkglist_cmd'] + " > pkglist.tmp.txt")
     with open("pkglist.tmp.txt") as f:
-        l = f.readlines()
+        l = f.read().split()
         l = map(lambda x: x.strip(), l)
         l = filter(lambda x: x not in g_data['ignore'] and x not in g_data['sync'], l)
         g_pending = list(l)
@@ -79,6 +79,14 @@ def add(args):
     global g_data
     add_items_to_list(g_data['sync'], args)
     del_items_from_list(g_data['ignore'], args)
+    save_data()
+
+@click.command(name='add-all')
+def add_all():
+    global g_data
+    global g_pending
+    add_items_to_list(g_data['sync'], g_pending)
+    del_items_from_list(g_data['ignore'], g_pending)
     save_data()
 
 @click.command()
@@ -116,6 +124,7 @@ cli.add_command(list_pending)
 cli.add_command(list_sync)
 cli.add_command(list_ignore)
 cli.add_command(add)
+cli.add_command(add_all)
 cli.add_command(ignore)
 cli.add_command(delete)
 cli.add_command(ignore_all)
